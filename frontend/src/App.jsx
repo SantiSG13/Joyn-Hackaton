@@ -95,6 +95,12 @@ export default function App() {
   const [desemConcepto, setDesemConcepto] = useState('')
   const [desemTxStatus, setDesemTxStatus] = useState('')
 
+  // game room form
+  const [salaCausa, setSalaCausa] = useState('')
+  const [salaMeta, setSalaMeta] = useState('')
+  const [salaAporte, setSalaAporte] = useState('')
+  const [salaTxStatus, setSalaTxStatus] = useState('')
+
   // events feed
   const [events, setEvents] = useState([])
   const [eventsCollapsed, setEventsCollapsed] = useState(false)
@@ -312,6 +318,43 @@ export default function App() {
     }
   }
 
+  /* ── crear sala ───────────────────────────────────────────────────────── */
+  const handleCrearSala = async () => {
+    if (!signer || !isRep) {
+      showToast('error', 'Solo el representante puede crear la sala')
+      return
+    }
+    if (!salaCausa.trim()) {
+      showToast('error', 'Introduce la causa de la sala')
+      return
+    }
+    try {
+      const metaWei = ethers.parseEther(salaMeta)
+      const aporteWei = ethers.parseEther(salaAporte)
+      if (metaWei <= 0n || aporteWei <= 0n) throw new Error('La meta y el aporte deben ser mayores a 0')
+
+      setSalaTxStatus('Actualizando causa…')
+      const c = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer)
+      const causaTx = await c.actualizarCausa(salaCausa.trim(), metaWei)
+      await causaTx.wait()
+
+      setSalaTxStatus('Configurando aporte…')
+      const aporteTx = await c.setAportePorPartida(aporteWei)
+      await aporteTx.wait()
+
+      setSalaTxStatus('✅ Sala creada')
+      showToast('success', '🎮 Sala creada y configurada en la blockchain')
+      setSalaCausa('')
+      setSalaMeta('')
+      setSalaAporte('')
+      await refreshData()
+      setTimeout(() => setSalaTxStatus(''), 4000)
+    } catch (err) {
+      setSalaTxStatus('❌ Error: ' + (err.reason || err.shortMessage || err.message))
+      setTimeout(() => setSalaTxStatus(''), 5000)
+    }
+  }
+
   /* ── game win → registrarPartida ─────────────────────────────────────── */
   const handleGameWin = useCallback(async () => {
     if (!signer) {
@@ -344,6 +387,7 @@ export default function App() {
   }, [account, representante])
 
   const aporteEth = useMemo(() => fmtEther(aportePorPartida), [aportePorPartida])
+  const roomConfigured = Boolean(causa && BigInt(meta || 0) > 0n && BigInt(aportePorPartida || 0) > 0n)
 
   /* ── event icon + color ── */
   const eventMeta = (type) => {
@@ -381,7 +425,7 @@ export default function App() {
           <span className="float-anim" style={{ fontSize: '2.2rem', lineHeight: 1, filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))' }}>💧</span>
           <div>
             <h1 style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0, letterSpacing: '-0.5px' }}>
-              Juega por el Barrio
+              JOYN
             </h1>
             <p style={{ fontSize: '0.75rem', opacity: 0.85, margin: 0 }}>
               {CFG.subtitle || 'Juega, dona y transforma tu comunidad'}
@@ -565,6 +609,25 @@ export default function App() {
                 <p style={{ color: 'var(--text-mid)', fontSize: '0.9rem', marginBottom: '1rem', lineHeight: 1.5 }}>
                   Atrapa 10 gotas de agua en 30 segundos. Al ganar, se enviará el precio seleccionado a la causa.
                 </p>
+                {account && isRep && (
+                  <div style={{ marginBottom: '1rem', padding: '1rem', background: 'var(--blue-soft)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(76, 184, 224, 0.3)' }}>
+                    <div style={{ fontWeight: 800, color: 'var(--blue-deep)', marginBottom: '0.75rem' }}>🏠 Crear sala</div>
+                    <div style={{ display: 'grid', gap: '0.65rem' }}>
+                      <input className="input-field" type="text" placeholder="Causa de la sala" value={salaCausa} onChange={(e) => setSalaCausa(e.target.value)} disabled={salaTxStatus.includes('…')} />
+                      <input className="input-field" type="number" min="0" step="0.001" placeholder="Meta (ETH)" value={salaMeta} onChange={(e) => setSalaMeta(e.target.value)} disabled={salaTxStatus.includes('…')} />
+                      <input className="input-field" type="number" min="0" step="0.001" placeholder="Aporte por partida (ETH)" value={salaAporte} onChange={(e) => setSalaAporte(e.target.value)} disabled={salaTxStatus.includes('…')} />
+                    </div>
+                    <button className="btn-primary" style={{ marginTop: '0.75rem' }} onClick={handleCrearSala} disabled={!salaCausa || !salaMeta || !salaAporte || salaTxStatus.includes('…')}>
+                      {salaTxStatus.includes('…') ? <><span className="spinner" style={{ borderTopColor: 'white' }} /> {salaTxStatus}</> : '🏠 Crear sala en blockchain'}
+                    </button>
+                    {salaTxStatus && !salaTxStatus.includes('…') && <div style={{ marginTop: '0.65rem', fontSize: '0.85rem', fontWeight: 700 }}>{salaTxStatus}</div>}
+                  </div>
+                )}
+                {!roomConfigured && (
+                  <div style={{ marginBottom: '1rem', padding: '0.8rem 1rem', background: 'var(--warn-soft)', borderRadius: 'var(--radius-md)', color: 'var(--text-dark)', fontSize: '0.85rem', fontWeight: 700 }}>
+                    Configura una sala con causa, meta y aporte por partida antes de jugar.
+                  </div>
+                )}
                 <div style={{ marginBottom: '1rem' }}>
                   <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '0.3rem', display: 'block' }}>
                     Precio por partida (ETH)
@@ -577,7 +640,7 @@ export default function App() {
                     placeholder={aporteEth !== '0' ? aporteEth : '0.01'}
                     value={gameAmount}
                     onChange={(e) => setGameAmount(e.target.value)}
-                    disabled={!account || isRegistering}
+                    disabled={!account || !roomConfigured || isRegistering}
                   />
                   <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.6rem', flexWrap: 'wrap' }}>
                     {['0.001', '0.01', '0.1', '1'].map((v) => (
@@ -585,7 +648,7 @@ export default function App() {
                         key={v}
                         className="quick-amount"
                         onClick={() => setGameAmount(v)}
-                        disabled={!account || isRegistering}
+                        disabled={!account || !roomConfigured || isRegistering}
                       >
                         {v} ETH
                       </button>
@@ -595,7 +658,7 @@ export default function App() {
                 <WaterGame
                   onWin={handleGameWin}
                   isRegistering={isRegistering}
-                  disabled={false}
+                  disabled={!account || !roomConfigured}
                   aportePorPartida={(gamePrice || '0') + ' ETH'}
                 />
                 {account && (
@@ -780,7 +843,7 @@ export default function App() {
         {/* ── Footer ── */}
         <footer style={{ textAlign: 'center', padding: '1.5rem 0 0.5rem', color: 'var(--text-mid)', fontSize: '0.82rem', position: 'relative', zIndex: 1 }}>
           <p style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-            <span>💧 Juega por el Barrio</span>
+            <span>joyn</span>
             <span style={{ opacity: 0.4 }}>·</span>
             <span>Contrato:</span>
             <span

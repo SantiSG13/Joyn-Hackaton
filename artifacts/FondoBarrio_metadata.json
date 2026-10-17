@@ -250,7 +250,7 @@
 				"inputs": [],
 				"name": "registrarPartida",
 				"outputs": [],
-				"stateMutability": "nonpayable",
+				"stateMutability": "payable",
 				"type": "function"
 			},
 			{
