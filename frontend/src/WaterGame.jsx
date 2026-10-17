@@ -26,7 +26,7 @@ function roundRectPath(ctx, x, y, w, h, r) {
   ctx.closePath()
 }
 
-function WaterGame({ onWin, isRegistering, disabled, aportePorPartida }) {
+function WaterGame({ onWin, isRegistering, disabled }) {
   const canvasRef = useRef(null)
   const animRef = useRef(null)
   const keysRef = useRef({ left: false, right: false })
@@ -301,14 +301,6 @@ function WaterGame({ onWin, isRegistering, disabled, aportePorPartida }) {
       ctx.fillStyle = '#d4f1e0'
       ctx.font = '17px Nunito, sans-serif'
       ctx.fillText('10 gotas atrapadas', CANVAS_W / 2, 205)
-      if (aportePorPartida) {
-        ctx.fillStyle = '#5cc6e8'
-        ctx.font = 'bold 19px Nunito, sans-serif'
-        ctx.fillText('💧 Aporte liberado', CANVAS_W / 2, 235)
-        ctx.font = 'bold 24px Poppins, sans-serif'
-        ctx.fillStyle = '#4cb8e0'
-        ctx.fillText(aportePorPartida, CANVAS_W / 2, 265)
-      }
       // Floating particles
       const t = Date.now() / 1000
       for (let i = 0; i < 8; i++) {

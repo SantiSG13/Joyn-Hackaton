@@ -27,6 +27,7 @@ contract FondoBarrio {
 
     event DonacionRecibida(address indexed donante, uint256 monto);
     event PartidaCompletada(address indexed jugador, uint256 aporteLiberado);
+    event ValorPartidaRecibido(address indexed jugador, uint256 valorWei);
     event FondosDesembolsados(address indexed destino, uint256 monto, string concepto);
     event CausaActualizada(string nuevaCausa, uint256 nuevaMeta);
 
@@ -82,8 +83,11 @@ contract FondoBarrio {
     // ──────────────────────────────────────────────
 
     /// @notice Registra una partida ganada y recibe el precio elegido por el jugador
+    /// @dev El pago y el registro de la partida ocurren en una sola transacción.
     function registrarPartida() external payable {
         require(msg.value > 0, "El precio de la partida debe ser mayor a 0");
+
+        emit ValorPartidaRecibido(msg.sender, msg.value);
 
         totalRecaudado += msg.value;
         aportesDonantes[msg.sender] += msg.value;

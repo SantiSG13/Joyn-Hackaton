@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { ethers } from 'ethers'
 import WaterGame from './WaterGame.jsx'
 
+const MIN_DONATION_WEI = ethers.parseEther('0.001')
+
 /* ── helpers ────────────────────────────────────────────────────────────── */
 function shortAddr(addr) {
   if (!addr) return ''
@@ -63,6 +65,7 @@ if (!binding || !binding.address || !binding.abi) {
 
 const CONTRACT_ADDRESS = binding.address
 const CONTRACT_ABI = binding.abi
+const READ_RPC_URL = 'https://testnet-rpc.monad.xyz'
 
 /* ── Main App ──────────────────────────────────────────────────────────── */
 export default function App() {
@@ -78,12 +81,10 @@ export default function App() {
   const [totalRecaudado, setTotalRecaudado] = useState('0')
   const [progresoPct, setProgresoPct] = useState(0)
   const [totalDonantes, setTotalDonantes] = useState(0)
-  const [totalPartidas, setTotalPartidas] = useState(0)
   const [saldoContrato, setSaldoContrato] = useState('0')
-  const [aportePorPartida, setAportePorPartida] = useState('0')
   const [representante, setRepresentante] = useState('')
-  const [misPartidas, setMisPartidas] = useState(0)
   const [misAportes, setMisAportes] = useState('0')
+  const [gamesUnlocked, setGamesUnlocked] = useState(false)
 
   // donation form
   const [donarAmount, setDonarAmount] = useState('')
@@ -94,12 +95,6 @@ export default function App() {
   const [desemMonto, setDesemMonto] = useState('')
   const [desemConcepto, setDesemConcepto] = useState('')
   const [desemTxStatus, setDesemTxStatus] = useState('')
-
-  // game room form
-  const [salaCausa, setSalaCausa] = useState('')
-  const [salaMeta, setSalaMeta] = useState('')
-  const [salaAporte, setSalaAporte] = useState('')
-  const [salaTxStatus, setSalaTxStatus] = useState('')
 
   // events feed
   const [events, setEvents] = useState([])
@@ -114,13 +109,6 @@ export default function App() {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
     toastTimerRef.current = setTimeout(() => setToast(null), 4500)
   }, [])
-
-  // game
-  const [isRegistering, setIsRegistering] = useState(false)
-  const [gameTriggered, setGameTriggered] = useState(false)
-  const [gameAmount, setGameAmount] = useState('')
-  const configuredGamePrice = fmtEther(aportePorPartida)
-  const gamePrice = gameAmount || (configuredGamePrice === '0.0' ? '' : configuredGamePrice)
 
   // loading
   const [loading, setLoading] = useState(true)
@@ -180,35 +168,31 @@ export default function App() {
     const c = contractWithSigner || (signer ? new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer) : null)
     if (!c) return
     try {
-      const [causaRes, metaRes, recaudadoRes, pctRes, donantesRes, partidasRes, saldoRes, aporteRes, repRes] =
+      const [causaRes, metaRes, recaudadoRes, pctRes, donantesRes, saldoRes, repRes] =
         await Promise.all([
           c.causa(),
           c.meta(),
           c.totalRecaudado(),
           c.progresoPorcentaje(),
           c.totalDonantes(),
-          c.totalPartidas(),
           c.saldoContrato(),
-          c.aportePorPartida(),
           c.representante(),
         ])
       setCausa(causaRes)
       setMeta(metaRes.toString())
       setTotalRecaudado(recaudadoRes.toString())
-      setProgresoPct(Number(pctRes))
+      // El contrato devuelve el porcentaje en base 10000: 10000 = 100%.
+      setProgresoPct(Number(pctRes) / 100)
       setTotalDonantes(Number(donantesRes))
-      setTotalPartidas(Number(partidasRes))
       setSaldoContrato(saldoRes.toString())
-      setAportePorPartida(aporteRes.toString())
       setRepresentante(repRes)
 
       if (account) {
-        const [misPart, misAport] = await Promise.all([
-          c.partidasPorJugador(account),
-          c.aportesDonantes(account),
-        ])
-        setMisPartidas(Number(misPart))
+        const misAport = await c.aportesDonantes(account)
         setMisAportes(misAport.toString())
+        setGamesUnlocked(misAport >= MIN_DONATION_WEI)
+      } else {
+        setGamesUnlocked(false)
       }
     } catch (err) {
       console.error('Error al leer datos del contrato:', err)
@@ -217,10 +201,10 @@ export default function App() {
 
   // initial read-only load
   useEffect(() => {
-    if (!window.ethereum) return
-    const p = new ethers.BrowserProvider(window.ethereum)
+    const p = new ethers.JsonRpcProvider(READ_RPC_URL)
     const c = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, p)
-    refreshData(c).then(() => setLoading(false))
+    setLoading(false)
+    refreshData(c)
   }, [refreshData])
 
   // refresh on account change
@@ -247,10 +231,6 @@ export default function App() {
       addEvent('donacion', { donante, monto: monto.toString() })
       refreshData()
     })
-    c.on('PartidaCompletada', (jugador, aporteLiberado) => {
-      addEvent('partida', { jugador, aporteLiberado: aporteLiberado.toString() })
-      refreshData()
-    })
     c.on('FondosDesembolsados', (destino, monto, concepto) => {
       addEvent('desembolso', { destino, monto: monto.toString(), concepto })
       refreshData()
@@ -262,7 +242,6 @@ export default function App() {
 
     return () => {
       c.removeAllListeners('DonacionRecibida')
-      c.removeAllListeners('PartidaCompletada')
       c.removeAllListeners('FondosDesembolsados')
       c.removeAllListeners('CausaActualizada')
     }
@@ -316,84 +295,22 @@ export default function App() {
       setDesemTxStatus('❌ Error: ' + (err.reason || err.shortMessage || err.message))
       setTimeout(() => setDesemTxStatus(''), 5000)
     }
+
   }
 
-  /* ── crear sala ───────────────────────────────────────────────────────── */
-  const handleCrearSala = async () => {
-    if (!signer || !isRep) {
-      showToast('error', 'Solo el representante puede crear la sala')
-      return
-    }
-    if (!salaCausa.trim()) {
-      showToast('error', 'Introduce la causa de la sala')
-      return
-    }
-    try {
-      const metaWei = ethers.parseEther(salaMeta)
-      const aporteWei = ethers.parseEther(salaAporte)
-      if (metaWei <= 0n || aporteWei <= 0n) throw new Error('La meta y el aporte deben ser mayores a 0')
-
-      setSalaTxStatus('Actualizando causa…')
-      const c = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer)
-      const causaTx = await c.actualizarCausa(salaCausa.trim(), metaWei)
-      await causaTx.wait()
-
-      setSalaTxStatus('Configurando aporte…')
-      const aporteTx = await c.setAportePorPartida(aporteWei)
-      await aporteTx.wait()
-
-      setSalaTxStatus('✅ Sala creada')
-      showToast('success', '🎮 Sala creada y configurada en la blockchain')
-      setSalaCausa('')
-      setSalaMeta('')
-      setSalaAporte('')
-      await refreshData()
-      setTimeout(() => setSalaTxStatus(''), 4000)
-    } catch (err) {
-      setSalaTxStatus('❌ Error: ' + (err.reason || err.shortMessage || err.message))
-      setTimeout(() => setSalaTxStatus(''), 5000)
-    }
-  }
-
-  /* ── game win → registrarPartida ─────────────────────────────────────── */
-  const handleGameWin = useCallback(async () => {
-    if (!signer) {
-      showToast('error', 'Conecta tu billetera para registrar la partida')
-      return
-    }
-    if (!gamePrice) {
-      showToast('error', 'Selecciona un precio para la partida')
-      return
-    }
-    setIsRegistering(true)
-    setGameTriggered(true)
-    try {
-      const c = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer)
-      const value = ethers.parseEther(gamePrice)
-      const tx = await c.registrarPartida({ value })
-      await tx.wait()
-      showToast('success', `🎉 ¡Partida registrada! Pago de ${gamePrice} ETH confirmado`)
-      refreshData()
-    } catch (err) {
-      showToast('error', 'Error al registrar partida: ' + (err.reason || err.shortMessage || err.message))
-    } finally {
-      setIsRegistering(false)
-    }
-  }, [signer, showToast, refreshData, gamePrice])
+  const handleGameWin = useCallback(() => {
+    showToast('success', '🎉 ¡Ganaste la partida!')
+  }, [showToast])
 
   /* ── derived ─────────────────────────────────────────────────────────── */
   const isRep = useMemo(() => {
     return account && representante && account.toLowerCase() === representante.toLowerCase()
   }, [account, representante])
 
-  const aporteEth = useMemo(() => fmtEther(aportePorPartida), [aportePorPartida])
-  const roomConfigured = Boolean(causa && BigInt(meta || 0) > 0n && BigInt(aportePorPartida || 0) > 0n)
-
   /* ── event icon + color ── */
   const eventMeta = (type) => {
     switch (type) {
       case 'donacion': return { icon: '💚', color: 'var(--green-light)' }
-      case 'partida': return { icon: '🎮', color: 'var(--water)' }
       case 'desembolso': return { icon: '📤', color: 'var(--warn)' }
       case 'causa': return { icon: '📋', color: 'var(--gold)' }
       default: return { icon: '•', color: 'var(--blue-light)' }
@@ -495,19 +412,9 @@ export default function App() {
                   <div className="stat-label">Donantes</div>
                 </div>
                 <div className="stat-badge">
-                  <span className="stat-icon">🎮</span>
-                  <div className="stat-value">{totalPartidas}</div>
-                  <div className="stat-label">Partidas</div>
-                </div>
-                <div className="stat-badge">
                   <span className="stat-icon">💰</span>
                   <div className="stat-value">{fmtEther(saldoContrato)}</div>
                   <div className="stat-label">Saldo (ETH)</div>
-                </div>
-                <div className="stat-badge">
-                  <span className="stat-icon">💧</span>
-                  <div className="stat-value">{fmtEther(aportePorPartida)}</div>
-                  <div className="stat-label">Aporte/Partida</div>
                 </div>
               </div>
             </section>
@@ -604,93 +511,27 @@ export default function App() {
               {/* Minigame Card */}
               <section className="card">
                 <h3 style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--blue-deep)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <span>🎮</span> Juega y Dona
+                  <span>🎮</span> Juega
                 </h3>
                 <p style={{ color: 'var(--text-mid)', fontSize: '0.9rem', marginBottom: '1rem', lineHeight: 1.5 }}>
-                  Atrapa 10 gotas de agua en 30 segundos. Al ganar, se enviará el precio seleccionado a la causa.
+                  Dona al menos 0.001 ETH para desbloquear los juegos.
                 </p>
-                {account && isRep && (
-                  <div style={{ marginBottom: '1rem', padding: '1rem', background: 'var(--blue-soft)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(76, 184, 224, 0.3)' }}>
-                    <div style={{ fontWeight: 800, color: 'var(--blue-deep)', marginBottom: '0.75rem' }}>🏠 Crear sala</div>
-                    <div style={{ display: 'grid', gap: '0.65rem' }}>
-                      <input className="input-field" type="text" placeholder="Causa de la sala" value={salaCausa} onChange={(e) => setSalaCausa(e.target.value)} disabled={salaTxStatus.includes('…')} />
-                      <input className="input-field" type="number" min="0" step="0.001" placeholder="Meta (ETH)" value={salaMeta} onChange={(e) => setSalaMeta(e.target.value)} disabled={salaTxStatus.includes('…')} />
-                      <input className="input-field" type="number" min="0" step="0.001" placeholder="Aporte por partida (ETH)" value={salaAporte} onChange={(e) => setSalaAporte(e.target.value)} disabled={salaTxStatus.includes('…')} />
+                {!gamesUnlocked ? (
+                  <div style={{ textAlign: 'center', padding: '2rem 1rem', background: 'var(--green-soft)', borderRadius: 'var(--radius-md)' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🔒</div>
+                    <strong style={{ color: 'var(--green-deep)' }}>
+                      {account ? 'Aún necesitas donar 0.001 ETH' : 'Conecta tu wallet y dona 0.001 ETH'}
+                    </strong>
+                    <p style={{ color: 'var(--text-mid)', fontSize: '0.85rem', margin: '0.5rem 0 0' }}>
+                      Tu acceso quedará desbloqueado permanentemente para esta wallet.
+                    </p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gap: '1.5rem' }}>
+                    <div>
+                      <h4 style={{ color: 'var(--blue-deep)', margin: '0 0 0.75rem' }}>💧 Atrapa las gotas</h4>
+                      <WaterGame onWin={handleGameWin} isRegistering={false} disabled={false} />
                     </div>
-                    <button className="btn-primary" style={{ marginTop: '0.75rem' }} onClick={handleCrearSala} disabled={!salaCausa || !salaMeta || !salaAporte || salaTxStatus.includes('…')}>
-                      {salaTxStatus.includes('…') ? <><span className="spinner" style={{ borderTopColor: 'white' }} /> {salaTxStatus}</> : '🏠 Crear sala en blockchain'}
-                    </button>
-                    {salaTxStatus && !salaTxStatus.includes('…') && <div style={{ marginTop: '0.65rem', fontSize: '0.85rem', fontWeight: 700 }}>{salaTxStatus}</div>}
-                  </div>
-                )}
-                {!roomConfigured && (
-                  <div style={{ marginBottom: '1rem', padding: '0.8rem 1rem', background: 'var(--warn-soft)', borderRadius: 'var(--radius-md)', color: 'var(--text-dark)', fontSize: '0.85rem', fontWeight: 700 }}>
-                    Configura una sala con causa, meta y aporte por partida antes de jugar.
-                  </div>
-                )}
-                <div style={{ marginBottom: '1rem' }}>
-                  <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '0.3rem', display: 'block' }}>
-                    Precio por partida (ETH)
-                  </label>
-                  <input
-                    className="input-field"
-                    type="number"
-                    step="0.001"
-                    min="0"
-                    placeholder={aporteEth !== '0' ? aporteEth : '0.01'}
-                    value={gameAmount}
-                    onChange={(e) => setGameAmount(e.target.value)}
-                    disabled={!account || !roomConfigured || isRegistering}
-                  />
-                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.6rem', flexWrap: 'wrap' }}>
-                    {['0.001', '0.01', '0.1', '1'].map((v) => (
-                      <button
-                        key={v}
-                        className="quick-amount"
-                        onClick={() => setGameAmount(v)}
-                        disabled={!account || !roomConfigured || isRegistering}
-                      >
-                        {v} ETH
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <WaterGame
-                  onWin={handleGameWin}
-                  isRegistering={isRegistering}
-                  disabled={!account || !roomConfigured}
-                  aportePorPartida={(gamePrice || '0') + ' ETH'}
-                />
-                {account && (
-                  <div style={{ marginTop: '1rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                    <div className="stat-gradient-blue" style={{ flex: 1, minWidth: 120 }}>
-                      <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--blue-deep)' }}>{misPartidas}</div>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-mid)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Tus partidas</div>
-                    </div>
-                    <div className="stat-gradient-green" style={{ flex: 1, minWidth: 120 }}>
-                      <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--green-deep)' }}>
-                        {fmtEther((BigInt(misPartidas) * BigInt(aportePorPartida || 0)).toString())}
-                      </div>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-mid)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Tu aporte liberado (ETH)</div>
-                    </div>
-                  </div>
-                )}
-                {isRegistering && (
-                  <div style={{
-                    marginTop: '0.85rem',
-                    padding: '0.85rem 1rem',
-                    background: 'var(--blue-soft)',
-                    borderRadius: 'var(--radius-md)',
-                    fontSize: '0.9rem',
-                    fontWeight: 700,
-                    color: 'var(--blue-deep)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.6rem',
-                    animation: 'slideInLeft 0.3s ease',
-                  }}>
-                    <span className="spinner" style={{ borderTopColor: 'var(--blue-mid)' }} />
-                    Registrando partida en la blockchain…
                   </div>
                 )}
               </section>
@@ -802,7 +643,7 @@ export default function App() {
                       <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem', opacity: 0.4 }}>📡</div>
                       <p style={{ fontSize: '1rem', fontWeight: 700 }}>Sin eventos todavía</p>
                       <p style={{ fontSize: '0.85rem', marginTop: '0.5rem', color: 'var(--text-light)' }}>
-                        Las donaciones, partidas jugadas y desembolsos aparecerán aquí en tiempo real.
+                        Las donaciones y desembolsos aparecerán aquí en tiempo real.
                       </p>
                     </div>
                   ) : (
@@ -813,9 +654,6 @@ export default function App() {
                       if (ev.type === 'donacion') {
                         cls += ' event-donacion'
                         desc = `Donación de ${fmtEther(ev.data.monto)} ETH por ${shortAddr(ev.data.donante)}`
-                      } else if (ev.type === 'partida') {
-                        cls += ' event-partida'
-                        desc = `Partida completada — ${fmtEther(ev.data.aporteLiberado)} ETH liberados por ${shortAddr(ev.data.jugador)}`
                       } else if (ev.type === 'desembolso') {
                         cls += ' event-desembolso'
                         desc = `Desembolso de ${fmtEther(ev.data.monto)} ETH a ${shortAddr(ev.data.destino)} — ${ev.data.concepto}`
@@ -859,7 +697,7 @@ export default function App() {
               {shortAddr(CONTRACT_ADDRESS)}
             </span>
           </p>
-          <p style={{ marginTop: '0.3rem', opacity: 0.65, fontSize: '0.78rem' }}>Cada partida, cada donación, un paso más hacia la meta.</p>
+          <p style={{ marginTop: '0.3rem', opacity: 0.65, fontSize: '0.78rem' }}>Cada donación es un paso más hacia la meta.</p>
         </footer>
       </main>
 
