@@ -1,0 +1,42 @@
+{
+  "hash": "c3dbb4e3",
+  "configHash": "8a4a67c8",
+  "lockfileHash": "37dc7bda",
+  "browserHash": "3b08215f",
+  "optimized": {
+    "ethers": {
+      "src": "../../../node_modules/ethers/lib.esm/index.js",
+      "file": "ethers.js",
+      "fileHash": "184998b2",
+      "needsInterop": false
+    },
+    "react-dom/client": {
+      "src": "../../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "046024fb",
+      "needsInterop": true
+    },
+    "react": {
+      "src": "../../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "d8575b7a",
+      "needsInterop": true
+    },
+    "react/jsx-dev-runtime": {
+      "src": "../../../node_modules/react/jsx-dev-runtime.js",
+      "file": "react_jsx-dev-runtime.js",
+      "fileHash": "09343e13",
+      "needsInterop": true
+    }
+  },
+  "chunks": {
+    "react-Ki4nRpj-": {
+      "file": "react-Ki4nRpj-.js",
+      "isDynamicEntry": false
+    },
+    "rolldown-runtime-CgOhrHTk": {
+      "file": "rolldown-runtime-CgOhrHTk.js",
+      "isDynamicEntry": false
+    }
+  }
+}

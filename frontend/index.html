@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <meta name="description" content="Juega por el Barrio — Juega, dona y transforma tu comunidad en Monad" />
+  <meta name="theme-color" content="#0d5c46" />
+  <title>💧 Juega por el Barrio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="importmap">
+  {
+    "imports": {
+      "react": "https://esm.sh/react@18.2.0",
+      "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+      "ethers": "https://esm.sh/ethers@6.11.1"
+    }
+  }
+  </script>
+  <script>
+    window.__QUICK_DAPP_CONFIG__ = {
+      title: "Juega por el Barrio",
+      logo: "💧",
+      subtitle: "Juega, dona y transforma tu comunidad",
+      primaryContractId: "FondoBarrio",
+      contracts: [
+        {
+          id: "FondoBarrio",
+          name: "FondoBarrio",
+          address: "0xd9145CCE52D386f254917e481eB44e9943F39138",
+          abi: [
+            {"inputs":[{"internalType":"string","name":"_causa","type":"string"},{"internalType":"uint256","name":"_meta","type":"uint256"},{"internalType":"uint256","name":"_aportePorPartida","type":"uint256"}],"stateMutability":"nonpayable","type":"constructor"},
+            {"anonymous":false,"inputs":[{"indexed":false,"internalType":"string","name":"nuevaCausa","type":"string"},{"indexed":false,"internalType":"uint256","name":"nuevaMeta","type":"uint256"}],"name":"CausaActualizada","type":"event"},
+            {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"donante","type":"address"},{"indexed":false,"internalType":"uint256","name":"monto","type":"uint256"}],"name":"DonacionRecibida","type":"event"},
+            {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"destino","type":"address"},{"indexed":false,"internalType":"uint256","name":"monto","type":"uint256"},{"indexed":false,"internalType":"string","name":"concepto","type":"string"}],"name":"FondosDesembolsados","type":"event"},
+            {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"jugador","type":"address"},{"indexed":false,"internalType":"uint256","name":"aporteLiberado","type":"uint256"}],"name":"PartidaCompletada","type":"event"},
+            {"inputs":[{"internalType":"string","name":"_nuevaCausa","type":"string"},{"internalType":"uint256","name":"_nuevaMeta","type":"uint256"}],"name":"actualizarCausa","outputs":[],"stateMutability":"nonpayable","type":"function"},
+            {"inputs":[],"name":"aportePorPartida","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"aportesDonantes","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[],"name":"causa","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"address","name":"_destino","type":"address"},{"internalType":"uint256","name":"_monto","type":"uint256"},{"internalType":"string","name":"_concepto","type":"string"}],"name":"desembolsar","outputs":[],"stateMutability":"nonpayable","type":"function"},
+            {"inputs":[],"name":"donar","outputs":[],"stateMutability":"payable","type":"function"},
+            {"inputs":[],"name":"meta","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"partidasPorJugador","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[],"name":"progresoPorcentaje","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[],"name":"registrarPartida","outputs":[],"stateMutability":"payable","type":"function"},
+            {"inputs":[],"name":"representante","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+            {"inputs":[],"name":"saldoContrato","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"uint256","name":"_nuevoAporte","type":"uint256"}],"name":"setAportePorPartida","outputs":[],"stateMutability":"nonpayable","type":"function"},
+            {"inputs":[],"name":"totalDonantes","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[],"name":"totalPartidas","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[],"name":"totalRecaudado","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"address","name":"_nuevoRepresentante","type":"address"}],"name":"transferirRepresentante","outputs":[],"stateMutability":"nonpayable","type":"function"}
+          ]
+        }
+      ]
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./src/index.css" />
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="./src/main.jsx"></script>
+</body>
+</html>

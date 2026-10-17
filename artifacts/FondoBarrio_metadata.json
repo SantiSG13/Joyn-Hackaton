@@ -1,0 +1,430 @@
+{
+	"compiler": {
+		"version": "0.8.34+commit.80d5c536"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"internalType": "string",
+						"name": "_causa",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "_meta",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "_aportePorPartida",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "nonpayable",
+				"type": "constructor"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": false,
+						"internalType": "string",
+						"name": "nuevaCausa",
+						"type": "string"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "nuevaMeta",
+						"type": "uint256"
+					}
+				],
+				"name": "CausaActualizada",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "donante",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "monto",
+						"type": "uint256"
+					}
+				],
+				"name": "DonacionRecibida",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "destino",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "monto",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "string",
+						"name": "concepto",
+						"type": "string"
+					}
+				],
+				"name": "FondosDesembolsados",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "jugador",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "aporteLiberado",
+						"type": "uint256"
+					}
+				],
+				"name": "PartidaCompletada",
+				"type": "event"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "string",
+						"name": "_nuevaCausa",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "_nuevaMeta",
+						"type": "uint256"
+					}
+				],
+				"name": "actualizarCausa",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "aportePorPartida",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"name": "aportesDonantes",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "causa",
+				"outputs": [
+					{
+						"internalType": "string",
+						"name": "",
+						"type": "string"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_destino",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "_monto",
+						"type": "uint256"
+					},
+					{
+						"internalType": "string",
+						"name": "_concepto",
+						"type": "string"
+					}
+				],
+				"name": "desembolsar",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "donar",
+				"outputs": [],
+				"stateMutability": "payable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "meta",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"name": "partidasPorJugador",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "progresoPorcentaje",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "registrarPartida",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "representante",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "saldoContrato",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_nuevoAporte",
+						"type": "uint256"
+					}
+				],
+				"name": "setAportePorPartida",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "totalDonantes",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "totalPartidas",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "totalRecaudado",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_nuevoRepresentante",
+						"type": "address"
+					}
+				],
+				"name": "transferirRepresentante",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {
+				"constructor": {
+					"params": {
+						"_aportePorPartida": "Aporte fijo que libera el patrocinador por partida ganada (en wei)",
+						"_causa": "Nombre o descripción de la causa",
+						"_meta": "Monto objetivo a recaudar (en wei)"
+					}
+				},
+				"desembolsar(address,uint256,string)": {
+					"params": {
+						"_concepto": "Motivo o descripción del gasto",
+						"_destino": "Dirección del proveedor o beneficiario del pago",
+						"_monto": "Cantidad a transferir (en wei)"
+					}
+				},
+				"registrarPartida()": {
+					"details": "El aporte proviene del saldo del contrato depositado por el patrocinador.         Requiere que el contrato tenga saldo suficiente para cubrir el aporte."
+				}
+			},
+			"title": "FondoBarrio - Plataforma de micro-mecenazgo \"Play-to-Donate\" sobre Monad Testnet",
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {
+				"actualizarCausa(string,uint256)": {
+					"notice": "Actualiza la causa y la meta del fondo"
+				},
+				"desembolsar(address,uint256,string)": {
+					"notice": "Transfiere fondos a un proveedor/destino y registra el gasto públicamente"
+				},
+				"donar()": {
+					"notice": "Permite a cualquier usuario donar $MON directamente al fondo"
+				},
+				"progresoPorcentaje()": {
+					"notice": "Devuelve el progreso de recaudación en porcentaje (base 10000 = 100%)"
+				},
+				"registrarPartida()": {
+					"notice": "Registra una partida ganada y libera el aporte del patrocinador al fondo"
+				},
+				"saldoContrato()": {
+					"notice": "Devuelve el saldo disponible en el contrato"
+				},
+				"setAportePorPartida(uint256)": {
+					"notice": "Actualiza el aporte por partida"
+				},
+				"transferirRepresentante(address)": {
+					"notice": "Transfiere la titularidad del representante"
+				}
+			},
+			"notice": "Permite donaciones directas y aportes vía minijuego patrocinado, con desembolsos transparentes.",
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/FondoBarrio.sol": "FondoBarrio"
+		},
+		"evmVersion": "osaka",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/FondoBarrio.sol": {
+			"keccak256": "0xb36cd5f0c14dd2609dc65ed178575394594bd6a64bd94acd81b61fa6251c761e",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://80fae4df4ace813be2194bdf3f09f629825f73a57de01e8f378cf90268f7d11d",
+				"dweb:/ipfs/QmbPh5R6j6VY3dH6forRUJGQNeXNCxGqVK8PZxhK2S2xV8"
+			]
+		}
+	},
+	"version": 1
+}
